@@ -23,6 +23,9 @@
             <a href="#" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-blue-700">
                 <i class="fas fa-user-circle mr-2"></i> My Profile
             </a>
+            <a href="{{ route('student.mock-tests.index') }}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-blue-700">
+                <i class="fas fa-file-alt mr-2"></i> Mock Tests
+            </a>
         </nav>
         <div class="mt-auto pt-4">
             <form action="{{ route('logout') }}" method="POST">

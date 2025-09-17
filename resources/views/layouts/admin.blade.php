@@ -26,6 +26,12 @@
             <a href="{{ route('admin.payments') }}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700">
                 <i class="fas fa-receipt mr-2"></i> Payments
             </a>
+            <a href="{{ route('admin.topics.index') }}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700">
+                <i class="fas fa-list-alt mr-2"></i> Topics
+            </a>
+            <a href="{{ route('admin.mock-tests.index') }}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700">
+                <i class="fas fa-clipboard-list mr-2"></i> Mock Tests
+            </a>
         </nav>
         <div class="mt-auto pt-4">
             <form action="{{ route('logout') }}" method="POST">

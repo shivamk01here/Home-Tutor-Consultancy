@@ -28,6 +28,31 @@
                     @endforeach
                 </div>
             </div>
+            @if($tutor->tutorProfile->packages)
+            <div class="bg-gray-100 p-6 rounded-lg mb-6">
+                <h3 class="text-xl font-bold mb-4">Packages Offered</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    @if(isset($tutor->tutorProfile->packages['offline']))
+                    <div class="bg-white p-4 rounded-lg shadow-sm">
+                        <h4 class="font-bold text-gray-800">{{ $tutor->tutorProfile->packages['offline']['title'] }}</h4>
+                        <p class="text-sm text-gray-600 mt-1">{{ $tutor->tutorProfile->packages['offline']['description'] }}</p>
+                    </div>
+                    @endif
+                    @if(isset($tutor->tutorProfile->packages['online']))
+                    <div class="bg-white p-4 rounded-lg shadow-sm">
+                        <h4 class="font-bold text-gray-800">{{ $tutor->tutorProfile->packages['online']['title'] }}</h4>
+                        <p class="text-sm text-gray-600 mt-1">{{ $tutor->tutorProfile->packages['online']['description'] }}</p>
+                    </div>
+                    @endif
+                    @if(isset($tutor->tutorProfile->packages['one_on_one']))
+                    <div class="bg-white p-4 rounded-lg shadow-sm">
+                        <h4 class="font-bold text-gray-800">{{ $tutor->tutorProfile->packages['one_on_one']['title'] }}</h4>
+                        <p class="text-sm text-gray-600 mt-1">{{ $tutor->tutorProfile->packages['one_on_one']['description'] }}</p>
+                    </div>
+                    @endif
+                </div>
+            </div>
+            @endif
 
             <div class="flex items-center justify-between">
                 <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">

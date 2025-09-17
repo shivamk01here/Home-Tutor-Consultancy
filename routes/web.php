@@ -45,9 +45,22 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/subjects', [AdminController::class, 'showSubjectManagement'])->name('subjects.index');
     Route::post('/subjects/create', [AdminController::class, 'createSubject'])->name('subjects.create');
 
+
+    Route::get('/topics', [AdminController::class, 'showTopics'])->name('topics.index');
+    Route::post('/topics', [AdminController::class, 'createTopic'])->name('topics.create');
+
+    // Mock Test Management
+    Route::get('/mock-tests', [AdminController::class, 'showMockTests'])->name('mock-tests.index');
+    Route::get('/mock-tests/create', [AdminController::class, 'showMockTestCreateForm'])->name('mock-tests.create');
+    Route::post('/mock-tests', [AdminController::class, 'createMockTest'])->name('mock-tests.store');
+
     // Payment Management
     Route::get('/payments', [AdminController::class, 'showPayments'])->name('payments');
     Route::post('/payments/{session}/mark-as-paid', [AdminController::class, 'markPayment'])->name('payments.mark');
+});
+
+Route::get('/topics/{subject_id}', function ($subject_id) {
+    return App\Models\Topic::where('subject_id', $subject_id)->get();
 });
 
 Route::middleware(['auth', 'role:tutor', 'is.verified'])->prefix('tutor')->name('tutor.')->group(function () {
@@ -67,4 +80,5 @@ Route::middleware(['auth', 'role:student'])->prefix('student')->name('student.')
     Route::post('/book-session', [StudentController::class, 'bookSession'])->name('book.session');
     Route::get('/review/{session}', [StudentController::class, 'showReviewForm'])->name('review.show');
     Route::post('/review/{session}/submit', [StudentController::class, 'submitReview'])->name('review.submit');
+    Route::get('/mock-tests', [StudentController::class, 'showMockTests'])->name('mock-tests.index');
 });

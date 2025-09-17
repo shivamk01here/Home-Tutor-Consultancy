@@ -173,4 +173,21 @@ class StudentController extends Controller
 
         return redirect()->route('student.dashboard')->with('success', 'Review submitted successfully!');
     }
+
+    public function showMockTests(Request $request)
+{
+    $subjects = Subject::all();
+    $topics = \App\Models\Topic::all();
+
+    $query = \App\Models\MockTest::with(['subject', 'topic', 'questions']);
+    if ($request->filled('subject_id')) {
+        $query->where('subject_id', $request->subject_id);
+    }
+    if ($request->filled('topic_id')) {
+        $query->where('topic_id', $request->topic_id);
+    }
+    $mockTests = $query->get();
+
+    return view('student.mock-tests.index', compact('mockTests', 'subjects', 'topics'));
+}
 }

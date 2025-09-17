@@ -5,7 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Subject;
 use App\Models\Session;
+use App\Models\LearningResource;
+use App\Models\TutorProfile; // Assuming you have a TutorProfile model
+use App\Models\Review;
+use App\Models\Location;
 use Illuminate\Http\Request;
+
 use Illuminate\Support\Facades\Auth;
 
 class TutorController extends Controller
@@ -47,26 +52,68 @@ class TutorController extends Controller
     public function updateProfile(Request $request)
     {
         $tutor = Auth::user();
+
         $validatedData = $request->validate([
             'bio' => 'nullable|string',
             'hourly_rate' => 'nullable|numeric|min:0',
             'subject_ids' => 'nullable|array',
+            'packages_online_title' => 'nullable|string',
+            'packages_online_description' => 'nullable|string',
+            'packages_offline_title' => 'nullable|string',
+            'packages_offline_description' => 'nullable|string',
+            'packages_one_on_one_title' => 'nullable|string',
+            'packages_one_on_one_description' => 'nullable|string',
         ]);
 
-        $tutor->tutorProfile->bio = $validatedData['bio'];
-        $tutor->tutorProfile->save();
-        
-        // Sync subjects with the hourly rate from the pivot table
+        // Sync subjects with hourly rate on pivot table
         $syncData = [];
-        if ($request->has('subject_ids')) {
-            foreach ($request->subject_ids as $subjectId) {
+        if (!empty($validatedData['subject_ids'])) {
+            foreach ($validatedData['subject_ids'] as $subjectId) {
                 $syncData[$subjectId] = ['hourly_rate' => $validatedData['hourly_rate'] ?? 0];
             }
         }
-        $tutor->subjects()->sync($syncData);
+        // Check if tutor has subjects relationship defined in User model
+        if (method_exists($tutor, 'subjects')) {
+            $tutor->subjects()->sync($syncData);
+        } else {
+            // Log error or handle the case where subjects relationship is not defined
+            Log::error('Subjects relationship not defined for User model');
+            return back()->with('error', 'Unable to update subjects. Please contact support.');
+        }
+
+        // Build packages array
+        $packages = [];
+        if (!empty($validatedData['packages_offline_title'])) {
+            $packages['offline'] = [
+                'title' => $validatedData['packages_offline_title'],
+                'description' => $validatedData['packages_offline_description'] ?? null,
+            ];
+        }
+        if (!empty($validatedData['packages_online_title'])) {
+            $packages['online'] = [
+                'title' => $validatedData['packages_online_title'],
+                'description' => $validatedData['packages_online_description'] ?? null,
+            ];
+        }
+        if (!empty($validatedData['packages_one_on_one_title'])) {
+            $packages['one_on_one'] = [
+                'title' => $validatedData['packages_one_on_one_title'],
+                'description' => $validatedData['packages_one_on_one_description'] ?? null,
+            ];
+        }
+
+        // Update or create TutorProfile
+        TutorProfile::updateOrCreate(
+            ['user_id' => $tutor->id],
+            [
+                'bio' => $validatedData['bio'] ?? null,
+                'packages' => $packages,
+            ]
+        );
 
         return back()->with('success', 'Profile updated successfully.');
     }
+
 
     public function showSessionManagement(Session $session)
     {

@@ -253,3 +253,54 @@ CREATE TABLE `student_subject` (
   FOREIGN KEY (`student_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
   FOREIGN KEY (`subject_id`) REFERENCES `subjects`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+
+
+-- topics table
+CREATE TABLE `topics` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `subject_id` BIGINT UNSIGNED NOT NULL,
+  `name` VARCHAR(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`subject_id`) REFERENCES `subjects`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- mock_tests table
+CREATE TABLE `mock_tests` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `title` VARCHAR(255) NOT NULL,
+  `subject_id` BIGINT UNSIGNED NOT NULL,
+  `topic_id` BIGINT UNSIGNED NOT NULL,
+  `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`subject_id`) REFERENCES `subjects`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`topic_id`) REFERENCES `topics`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- questions table
+CREATE TABLE `questions` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `mock_test_id` BIGINT UNSIGNED NOT NULL,
+  `question_text` TEXT NOT NULL,
+  `option_a` TEXT NOT NULL,
+  `option_b` TEXT NOT NULL,
+  `option_c` TEXT NOT NULL,
+  `option_d` TEXT NOT NULL,
+  `option_e` TEXT NULL,
+  `correct_answer` CHAR(1) NOT NULL, -- A, B, C, D, or E
+  `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`mock_test_id`) REFERENCES `mock_tests`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- Update tutor_profiles table
+ALTER TABLE `tutor_profiles`
+MODIFY COLUMN `packages` JSON NULL;
+
+
+alter table topics add column updated_at timestamp;
+alter table topics add column created_at timestamp;

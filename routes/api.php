@@ -1,7 +1,11 @@
+
 <?php
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
+use App\Models\Topic;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -16,4 +20,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
+});
+
+Route::get('/topics/{subject_id}', function ($subject_id) {
+    return Topic::where('subject_id', $subject_id)->get();
 });

@@ -171,7 +171,7 @@ class AdminController extends Controller
             'is_verified' => 'boolean',
         ]);
         
-        $tutorRole = Role::where('name', 'tutor')->first();
+        $tutorRole = \App\Models\Role::where('name', 'tutor')->first();
         if (!$tutorRole) return back()->with('error', 'Tutor role not found.');
 
         $profilePhotoPath = $request->hasFile('profile_photo') 
@@ -248,7 +248,7 @@ class AdminController extends Controller
             'subjects_of_interest' => 'required|array|max:5',
         ]);
         
-        $studentRole = Role::where('name', 'student')->first();
+        $studentRole = \App\Models\Role::where('name', 'student')->first();
         if (!$studentRole) return back()->with('error', 'Student role not found.');
 
         $profilePhotoPath = $request->hasFile('profile_photo')
@@ -264,7 +264,7 @@ class AdminController extends Controller
             'is_verified' => true,
         ]);
         
-        StudentProfile::create([
+        \App\Models\StudentProfile::create([
             'user_id' => $user->id,
             'parent_name' => $validatedData['parent_name'],
             'parent_contact' => $validatedData['parent_contact'],
@@ -285,5 +285,91 @@ class AdminController extends Controller
         $payments = Payment::where('student_id', $student->id)->orderBy('created_at', 'desc')->get();
         
         return view('admin.students.show', compact('student', 'payments'));
+    }
+
+    // ===================================
+    // TOPIC MANAGEMENT
+    // ===================================
+    public function showTopics(Request $request)
+    {
+        $subjects = Subject::all();
+        $topics = \App\Models\Topic::with('subject')
+                        ->when($request->subject_id, fn($q) => $q->where('subject_id', $request->subject_id))
+                        ->get();
+        return view('admin.topics.index', compact('topics', 'subjects'));
+    }
+
+    public function createTopic(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'subject_id' => 'required|exists:subjects,id',
+        ]);
+        \App\Models\Topic::create($request->all());
+        return back()->with('success', 'Topic created successfully.');
+    }
+
+    // ===================================
+    // MOCK TEST MANAGEMENT
+    // ===================================
+    public function showMockTests(Request $request)
+    {
+        $subjects = Subject::all();
+        $topics = \App\Models\Topic::all();
+
+        $query = \App\Models\MockTest::with(['subject', 'topic']);
+        if ($request->filled('subject_id')) {
+            $query->where('subject_id', $request->subject_id);
+        }
+        if ($request->filled('topic_id')) {
+            $query->where('topic_id', $request->topic_id);
+        }
+        $mockTests = $query->get();
+
+        return view('admin.mock-tests.index', compact('mockTests', 'subjects', 'topics'));
+    }
+
+    public function showMockTestCreateForm()
+    {
+        $subjects = Subject::all();
+        $topics = \App\Models\Topic::all(); // We will use JavaScript to filter this on the form
+        return view('admin.mock-tests.create', compact('subjects', 'topics'));
+    }
+
+    public function createMockTest(Request $request)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string',
+            'subject_id' => 'required|exists:subjects,id',
+            'topic_id' => 'required|exists:topics,id',
+            'questions' => 'required|array',
+            'questions.*.question_text' => 'required|string',
+            'questions.*.options.A' => 'required|string',
+            'questions.*.options.B' => 'required|string',
+            'questions.*.options.C' => 'required|string',
+            'questions.*.options.D' => 'required|string',
+            'questions.*.options.E' => 'nullable|string',
+            'questions.*.correct_answer' => 'required|in:A,B,C,D,E',
+        ]);
+
+        $mockTest = \App\Models\MockTest::create([
+            'title' => $validated['title'],
+            'subject_id' => $validated['subject_id'],
+            'topic_id' => $validated['topic_id'],
+        ]);
+
+        foreach ($validated['questions'] as $questionData) {
+            $mockTest->questions()->create([
+                'question_text' => $questionData['question_text'],
+                'option_a' => $questionData['options']['A'],
+                'option_b' => $questionData['options']['B'],
+                'option_c' => $questionData['options']['C'],
+                'option_d' => $questionData['options']['D'],
+                'option_e' => $questionData['options']['E'] ?? null,
+                'correct_answer' => $questionData['correct_answer'],
+            ]);
+        }
+
+        return redirect()->route('admin.mock-tests.index')->with('success', 'Mock test created successfully.');
     }
 }
