@@ -22,10 +22,15 @@
 <div class="bg-white p-6 rounded-lg shadow-md">
     <ul class="divide-y divide-gray-200">
         @forelse($mockTests as $test)
-        <li class="py-3">
-            <h3 class="font-bold">{{ $test->title }}</h3>
-            <p class="text-sm text-gray-600">Subject: {{ $test->subject->name }} | Topic: {{ $test->topic->name }}</p>
-            <p class="text-sm text-gray-500">{{ $test->questions->count() }} Questions</p>
+        <li class="py-3 flex justify-between items-center">
+            <div>
+                <h3 class="font-bold">{{ $test->title }}</h3>
+                <p class="text-sm text-gray-600">Subject: {{ $test->subject->name }} | Topic: {{ $test->topic->name }}</p>
+                <p class="text-sm text-gray-500">{{ $test->questions->count() }} Questions</p>
+            </div>
+            <a href="{{ route('student.mock-tests.give', $test->id) }}" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded transition duration-200">
+                Give Test
+            </a>
         </li>
         @empty
         <p>No mock tests found for your selection.</p>

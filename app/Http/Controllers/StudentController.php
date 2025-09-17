@@ -7,6 +7,9 @@ use App\Models\Subject;
 use App\Models\Session;
 use App\Models\Review;
 use App\Models\Location;
+use App\Models\MockTest;
+use App\Models\MockTestResult;
+use App\Models\Feedback;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -96,40 +99,45 @@ class StudentController extends Controller
             return redirect()->route('student.discovery')->with('error', 'Tutor not found.');
         }
 
-        $tutor->load('tutorProfile', 'subjects', 'reviews.student');
-        $reviews = $tutor->reviews;
-
-        return view('student.tutor-profile', compact('tutor', 'reviews'));
+        $tutor->load([
+            'tutorProfile.location', 
+            'subjects', 
+            'tutorPackages.subject', // Correctly load tutor packages and their associated subjects
+            'resources' // Ensure resources are loaded
+        ]);
+    
+        // Pass the loaded tutor object directly to the view
+        return view('student.tutor.profile', compact('tutor'));
     }
 
     /**
      * Book a session with a tutor.
-     */
-    public function bookSession(Request $request)
-    {
-        $validatedData = $request->validate([
-            'tutor_id' => 'required|exists:users,id',
-            'subject_id' => 'required|exists:subjects,id',
-            'session_date' => 'required|date|after_or_equal:today',
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i|after:start_time',
-        ]);
+    */
+    // public function bookSession(Request $request)
+    // {
+    //     $validatedData = $request->validate([
+    //         'tutor_id' => 'required|exists:users,id',
+    //         'subject_id' => 'required|exists:subjects,id',
+    //         'session_date' => 'required|date|after_or_equal:today',
+    //         'start_time' => 'required|date_format:H:i',
+    //         'end_time' => 'required|date_format:H:i|after:start_time',
+    //     ]);
 
-        // Check if the tutor is available at this time. (Simplified for MVP)
-        // Check for conflicting sessions...
+    //     // Check if the tutor is available at this time. (Simplified for MVP)
+    //     // Check for conflicting sessions...
 
-        Session::create([
-            'student_id' => Auth::id(),
-            'tutor_id' => $validatedData['tutor_id'],
-            'subject_id' => $validatedData['subject_id'],
-            'session_date' => $validatedData['session_date'],
-            'start_time' => $validatedData['start_time'],
-            'end_time' => $validatedData['end_time'],
-            'status' => 'scheduled',
-        ]);
+    //     Session::create([
+    //         'student_id' => Auth::id(),
+    //         'tutor_id' => $validatedData['tutor_id'],
+    //         'subject_id' => $validatedData['subject_id'],
+    //         'session_date' => $validatedData['session_date'],
+    //         'start_time' => $validatedData['start_time'],
+    //         'end_time' => $validatedData['end_time'],
+    //         'status' => 'scheduled',
+    //     ]);
 
-        return back()->with('success', 'Session booked successfully!');
-    }
+    //     return back()->with('success', 'Session booked successfully!');
+    // }
 
     /**
      * Show the review form for a completed session.
@@ -175,19 +183,127 @@ class StudentController extends Controller
     }
 
     public function showMockTests(Request $request)
-{
-    $subjects = Subject::all();
-    $topics = \App\Models\Topic::all();
+    {
+        $subjects = Subject::all();
+        $topics = \App\Models\Topic::all();
 
-    $query = \App\Models\MockTest::with(['subject', 'topic', 'questions']);
-    if ($request->filled('subject_id')) {
-        $query->where('subject_id', $request->subject_id);
-    }
-    if ($request->filled('topic_id')) {
-        $query->where('topic_id', $request->topic_id);
-    }
-    $mockTests = $query->get();
+        $query = \App\Models\MockTest::with(['subject', 'topic', 'questions']);
+        if ($request->filled('subject_id')) {
+            $query->where('subject_id', $request->subject_id);
+        }
+        if ($request->filled('topic_id')) {
+            $query->where('topic_id', $request->topic_id);
+        }
+        $mockTests = $query->get();
 
-    return view('student.mock-tests.index', compact('mockTests', 'subjects', 'topics'));
-}
+        return view('student.mock-tests.index', compact('mockTests', 'subjects', 'topics'));
+    }
+
+    public function giveMockTest(MockTest $mockTest)
+    {
+        $mockTest->load('questions');
+        return view('student.mock-tests.take', compact('mockTest'));
+    }
+
+    public function submitMockTest(Request $request, MockTest $mockTest)
+    {
+        $questions = $mockTest->questions;
+        $correctAnswers = 0;
+        $incorrectAnswers = 0;
+        $totalQuestions = $questions->count();
+        $submittedAnswers = $request->except('_token');
+
+        foreach ($questions as $question) {
+            $submittedAnswer = $submittedAnswers['q' . $question->id] ?? null;
+            if ($submittedAnswer) {
+                if ($submittedAnswer === $question->correct_answer) {
+                    $correctAnswers++;
+                } else {
+                    $incorrectAnswers++;
+                }
+            }
+        }
+
+        $unattempted = $totalQuestions - ($correctAnswers + $incorrectAnswers);
+        $score = ($correctAnswers / $totalQuestions) * 100;
+
+        $result = MockTestResult::create([
+            'user_id' => Auth::id(),
+            'mock_test_id' => $mockTest->id,
+            'score' => $score,
+            'correct_answers' => $correctAnswers,
+            'incorrect_answers' => $incorrectAnswers,
+            'unattempted_questions' => $unattempted,
+        ]);
+
+        return redirect()->route('student.mock-tests.results', $result->id);
+    }
+
+    public function showMockTestResults(MockTestResult $result)
+    {
+        $result->load('mockTest');
+        return view('student.mock-tests.results', compact('result'));
+    }
+
+    public function showStudentProgress()
+    {
+        $results = MockTestResult::where('user_id', Auth::id())->with('mockTest')->get();
+        return view('student.progress.index', compact('results'));
+    }
+
+    public function showFeedbackForm()
+    {
+        return view('student.feedback.create');
+    }
+
+    public function submitFeedback(Request $request)
+    {
+        $validated = $request->validate([
+            'likes' => 'nullable|string|max:2000',
+            'dislikes' => 'nullable|string|max:2000',
+            'suggestions' => 'nullable|string|max:2000',
+            'rating' => 'required|integer|min:1|max:5',
+        ]);
+        
+        Feedback::create([
+            'user_id' => Auth::id(),
+            'likes' => $validated['likes'],
+            'dislikes' => $validated['dislikes'],
+            'suggestions' => $validated['suggestions'],
+            'rating' => $validated['rating'],
+        ]);
+        
+        return back()->with('success', 'Thank you for your valuable feedback!');
+    }
+
+    // ===================================
+    // NEW BOOKING & SESSION MANAGEMENT
+    // ===================================
+    public function bookSession(Request $request)
+    {
+        $request->validate([
+            'tutor_id' => 'required|exists:users,id',
+            'tutor_package_id' => 'required|exists:tutor_packages,id',
+            'session_date' => 'required|date|after_or_equal:today',
+            'session_time' => 'required|date_format:H:i',
+        ]);
+        Session::create([
+            'student_id' => Auth::id(),
+            'tutor_id' => $request->tutor_id,
+            'tutor_package_id' => $request->tutor_package_id,
+            'session_date' => $request->session_date,
+            'session_time' => $request->session_time,
+            'status' => 'pending',
+            'payment_status' => 'cod_pending',
+        ]);
+        return back()->with('success', 'Booking successful! Awaiting tutor confirmation.');
+    }
+    public function showMySessions()
+    {
+        $sessions = Session::where('student_id', Auth::id())
+            ->with(['tutor', 'tutorPackage.subject'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+        return view('student.sessions.index', compact('sessions'));
+    }
 }

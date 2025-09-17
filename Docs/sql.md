@@ -72,27 +72,6 @@ CREATE TABLE `tutor_subjects` (
   FOREIGN KEY (`subject_id`) REFERENCES `subjects`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-
-
--- sessions table
-CREATE TABLE `sessions` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `student_id` BIGINT UNSIGNED NOT NULL,
-  `tutor_id` BIGINT UNSIGNED NOT NULL,
-  `subject_id` BIGINT UNSIGNED NOT NULL,
-  `session_date` DATE NOT NULL,
-  `start_time` TIME NOT NULL,
-  `end_time` TIME NOT NULL,
-  `status` ENUM('scheduled', 'completed', 'canceled') NOT NULL DEFAULT 'scheduled',
-  `tutor_notes` TEXT DEFAULT NULL,
-  `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  FOREIGN KEY (`student_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
-  FOREIGN KEY (`tutor_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
-  FOREIGN KEY (`subject_id`) REFERENCES `subjects`(`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 -- payments table
 CREATE TABLE `payments` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -304,3 +283,78 @@ MODIFY COLUMN `packages` JSON NULL;
 
 alter table topics add column updated_at timestamp;
 alter table topics add column created_at timestamp;
+
+
+
+-- mock_test_results table
+CREATE TABLE `mock_test_results` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `user_id` BIGINT UNSIGNED NOT NULL,
+  `mock_test_id` BIGINT UNSIGNED NOT NULL,
+  `score` DECIMAL(5,2) NOT NULL,
+  `correct_answers` INT NOT NULL,
+  `incorrect_answers` INT NOT NULL,
+  `unattempted_questions` INT NOT NULL,
+  `submitted_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`mock_test_id`) REFERENCES `mock_tests`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- feedback table
+CREATE TABLE `feedback` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `user_id` BIGINT UNSIGNED NOT NULL,
+  `likes` TEXT NULL,
+  `dislikes` TEXT NULL,
+  `suggestions` TEXT NULL,
+  `rating` INT NOT NULL,
+  `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+alter table `mock_test_results` add column created_at timestamp;
+alter table `mock_test_results` add column updated_at timestamp;
+
+
+alter table `feedback` add column created_at timestamp;
+alter table `feedback` add column updated_at= timestamp;
+
+
+
+-- tutor_packages table
+CREATE TABLE `tutor_packages` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `tutor_id` BIGINT UNSIGNED NOT NULL,
+  `subject_id` BIGINT UNSIGNED NOT NULL,
+  `package_type` ENUM('one_on_one', 'online_batch', 'offline') NOT NULL,
+  `rate` DECIMAL(8,2) NOT NULL,
+  `rate_unit` ENUM('per_hour', 'per_month') NOT NULL,
+  `description` TEXT,
+  `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`tutor_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`subject_id`) REFERENCES `subjects`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- sessions table
+CREATE TABLE `sessions` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `student_id` BIGINT UNSIGNED NOT NULL,
+  `tutor_id` BIGINT UNSIGNED NOT NULL,
+  `tutor_package_id` BIGINT UNSIGNED NOT NULL,
+  `session_date` DATE NOT NULL,
+  `session_time` TIME NOT NULL,
+  `tutor_notes` TEXT NULL;
+  `status` ENUM('pending', 'confirmed', 'completed', 'canceled') NOT NULL DEFAULT 'pending',
+  `payment_status` ENUM('paid', 'cod_pending') NOT NULL DEFAULT 'cod_pending',
+  `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`student_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`tutor_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`tutor_package_id`) REFERENCES `tutor_packages`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

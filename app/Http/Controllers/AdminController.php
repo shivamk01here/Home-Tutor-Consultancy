@@ -8,6 +8,10 @@ use App\Models\Location;
 use App\Models\Subject;
 use App\Models\Session;
 use App\Models\Payment;
+use App\Models\StudentProfile;
+use App\Models\MockTest;
+use App\Models\MockTestResult;
+use App\Models\Feedback;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
 
@@ -371,5 +375,21 @@ class AdminController extends Controller
         }
 
         return redirect()->route('admin.mock-tests.index')->with('success', 'Mock test created successfully.');
+    }
+
+
+    public function showFeedback()
+    {
+        $feedbacks = Feedback::with('user')->orderBy('created_at', 'desc')->get();
+        $averageRating = Feedback::avg('rating');
+        return view('admin.feedback.index', compact('feedbacks', 'averageRating'));
+    }
+
+    public function showSessions()
+    {
+        $sessions = Session::with(['student', 'tutor', 'tutorPackage.subject'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+        return view('admin.sessions.index', compact('sessions'));
     }
 }

@@ -17,14 +17,20 @@
             <a href="{{ route('student.discovery') }}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-blue-700">
                 <i class="fas fa-search mr-2"></i> Find a Tutor
             </a>
-            <a href="#" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-blue-700">
-                <i class="fas fa-receipt mr-2"></i> Billing
+            <a href="{{ route('student.sessions.index') }}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-blue-700">
+                <i class="fas fa-calendar-check mr-2"></i> My Sessions
             </a>
             <a href="#" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-blue-700">
                 <i class="fas fa-user-circle mr-2"></i> My Profile
             </a>
             <a href="{{ route('student.mock-tests.index') }}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-blue-700">
                 <i class="fas fa-file-alt mr-2"></i> Mock Tests
+            </a>
+            <a href="{{ route('student.progress.index') }}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-blue-700">
+                <i class="fas fa-chart-line mr-2"></i> My Progress
+            </a>
+            <a href="{{ route('student.feedback.create') }}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-blue-700">
+                <i class="fas fa-comment-alt mr-2"></i> Feedback
             </a>
         </nav>
         <div class="mt-auto pt-4">

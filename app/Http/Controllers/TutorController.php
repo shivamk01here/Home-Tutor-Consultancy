@@ -6,10 +6,14 @@ use App\Models\User;
 use App\Models\Subject;
 use App\Models\Session;
 use App\Models\LearningResource;
-use App\Models\TutorProfile; // Assuming you have a TutorProfile model
-use App\Models\Review;
-use App\Models\Location;
+use App\Models\TutorProfile; 
+use App\Models\MockTest;
+use App\Models\MockTestResult;
+use App\Models\Feedback;
+use App\Models\TutorPackage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use App\Models\tutorPackages;
 
 use Illuminate\Support\Facades\Auth;
 
@@ -127,24 +131,24 @@ class TutorController extends Controller
     /**
      * Complete a session and submit a progress report.
      */
-    public function completeSession(Request $request, Session $session)
-    {
-        if ($session->tutor_id !== Auth::id()) {
-            return back()->with('error', 'Unauthorized action.');
-        }
+    // public function completeSession(Request $request, Session $session)
+    // {
+    //     if ($session->tutor_id !== Auth::id()) {
+    //         return back()->with('error', 'Unauthorized action.');
+    //     }
 
-        $validatedData = $request->validate([
-            'tutor_notes' => 'required|string',
-            'session_status' => 'required|in:completed,canceled',
-        ]);
+    //     $validatedData = $request->validate([
+    //         'tutor_notes' => 'required|string',
+    //         'session_status' => 'required|in:completed,canceled',
+    //     ]);
 
-        $session->update([
-            'status' => $validatedData['session_status'],
-            'tutor_notes' => $validatedData['tutor_notes'],
-        ]);
+    //     $session->update([
+    //         'status' => $validatedData['session_status'],
+    //         'tutor_notes' => $validatedData['tutor_notes'],
+    //     ]);
 
-        return redirect()->route('tutor.dashboard')->with('success', 'Session updated successfully.');
-    }
+    //     return redirect()->route('tutor.dashboard')->with('success', 'Session updated successfully.');
+    // }
     public function showHybridLearning()
     {
         $resources = \App\Models\LearningResource::where('tutor_id', Auth::id())->get();
@@ -170,5 +174,82 @@ class TutorController extends Controller
         ]);
 
         return back()->with('success', 'Resource uploaded successfully.');
+    }
+
+    public function showFeedbackForm()
+    {
+        return view('tutor.feedback.create');
+    }
+
+    public function submitFeedback(Request $request)
+    {
+        $validated = $request->validate([
+            'likes' => 'nullable|string|max:2000',
+            'dislikes' => 'nullable|string|max:2000',
+            'suggestions' => 'nullable|string|max:2000',
+            'rating' => 'required|integer|min:1|max:5',
+        ]);
+        
+        Feedback::create([
+            'user_id' => Auth::id(),
+            'likes' => $validated['likes'],
+            'dislikes' => $validated['dislikes'],
+            'suggestions' => $validated['suggestions'],
+            'rating' => $validated['rating'],
+        ]);
+        
+        return back()->with('success', 'Thank you for your valuable feedback!');
+    }
+
+
+    // ===================================
+    // NEW PACKAGE MANAGEMENT
+    // ===================================
+    public function showPackageManagement()
+    {
+        $tutor = Auth::user();
+        $packages = $tutor->tutorPackages()->with('subject')->get();
+        $subjects = $tutor->subjects; // Get subjects tutor teaches
+        return view('tutor.packages.index', compact('packages', 'subjects'));
+    }
+    public function createPackage(Request $request)
+    {
+        $request->validate([
+            'subject_id' => 'required|exists:subjects,id',
+            'package_type' => 'required|in:one_on_one,online_batch,offline',
+            'rate' => 'required|numeric|min:0',
+            'rate_unit' => 'required|in:per_hour,per_month',
+            'description' => 'nullable|string',
+        ]);
+        Auth::user()->tutorPackages()->create($request->all());
+        return back()->with('success', 'Package created successfully!');
+    }
+    // ===================================
+    // NEW SESSIONS & EARNINGS
+    // ===================================
+    public function showSessions()
+    {
+        $sessions = Session::where('tutor_id', Auth::id())
+            ->with(['student', 'tutorPackage.subject'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+        return view('tutor.sessions.index', compact('sessions'));
+    }
+    public function completeSession(Session $session)
+    {
+        if ($session->tutor_id !== Auth::id()) {
+            abort(403);
+        }
+        $session->update(['status' => 'completed', 'payment_status' => 'paid']);
+        return back()->with('success', 'Session marked as completed and payment received!');
+    }
+    public function showEarnings()
+    {
+        $completedSessions = Session::where('tutor_id', Auth::id())
+            ->where('status', 'completed')
+            ->with('tutorPackage')
+            ->get();
+        $totalEarnings = $completedSessions->sum(fn($session) => $session->tutorPackage->rate);
+        return view('tutor.earnings.index', compact('totalEarnings', 'completedSessions'));
     }
 }

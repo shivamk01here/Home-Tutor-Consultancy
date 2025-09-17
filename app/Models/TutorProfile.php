@@ -23,11 +23,6 @@ class TutorProfile extends Model
         'packages', // New
     ];
 
-    protected $casts = [
-        'packages' => 'array',
-    ];
-    
-
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

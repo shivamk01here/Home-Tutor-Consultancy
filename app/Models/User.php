@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\TutorPackage; // Make sure this is at the top
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 use App\Models\Role;
@@ -96,4 +97,32 @@ class User extends Authenticatable
     {
         return $this->hasMany(Review::class, 'tutor_id');
     }
+
+
+    public function tutorPackages()
+    {
+        return $this->hasMany(TutorPackage::class, 'tutor_id');
+    }
+
+    /**
+     * Get the sessions associated with the student.
+     */
+    public function sessionsAsStudent()
+    {
+        return $this->hasMany(Session::class, 'student_id');
+    }
+
+    /**
+     * Get the sessions associated with the tutor.
+     */
+    public function sessionsAsTutor()
+    {
+        return $this->hasMany(Session::class, 'tutor_id');
+    }
+
+
+    public function resources()
+{
+    return $this->hasMany(LearningResource::class, 'tutor_id');
+}
 }

@@ -57,6 +57,9 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Payment Management
     Route::get('/payments', [AdminController::class, 'showPayments'])->name('payments');
     Route::post('/payments/{session}/mark-as-paid', [AdminController::class, 'markPayment'])->name('payments.mark');
+
+    Route::get('/feedback', [AdminController::class, 'showFeedback'])->name('feedback.index');
+    Route::get('/sessions', [AdminController::class, 'showSessions'])->name('sessions.index');
 });
 
 Route::get('/topics/{subject_id}', function ($subject_id) {
@@ -71,6 +74,15 @@ Route::middleware(['auth', 'role:tutor', 'is.verified'])->prefix('tutor')->name(
     Route::post('/session/{session}/complete', [TutorController::class, 'completeSession'])->name('session.complete');
     Route::get('/resources', [TutorController::class, 'showHybridLearning'])->name('resources');
     Route::post('/resources/upload', [TutorController::class, 'uploadResource'])->name('resources.upload');
+    Route::get('/feedback', [TutorController::class, 'showFeedbackForm'])->name('feedback.create');
+    Route::post('/feedback', [TutorController::class, 'submitFeedback'])->name('feedback.submit');
+    Route::get('/packages', [TutorController::class, 'showPackageManagement'])->name('packages.index');
+    Route::post('/packages', [TutorController::class, 'createPackage'])->name('packages.create');
+    Route::get('/sessions', [TutorController::class, 'showSessions'])->name('sessions.index');
+    Route::post('/sessions/{session}/complete', [TutorController::class, 'completeSession'])->name('session.complete');
+    Route::get('/earnings', [TutorController::class, 'showEarnings'])->name('earnings.index');
+
+
 });
 
 Route::middleware(['auth', 'role:student'])->prefix('student')->name('student.')->group(function () {
@@ -81,4 +93,15 @@ Route::middleware(['auth', 'role:student'])->prefix('student')->name('student.')
     Route::get('/review/{session}', [StudentController::class, 'showReviewForm'])->name('review.show');
     Route::post('/review/{session}/submit', [StudentController::class, 'submitReview'])->name('review.submit');
     Route::get('/mock-tests', [StudentController::class, 'showMockTests'])->name('mock-tests.index');
+
+    Route::get('/mock-tests/{mockTest}/give', [StudentController::class, 'giveMockTest'])->name('mock-tests.give');
+    Route::post('/mock-tests/{mockTest}/submit', [StudentController::class, 'submitMockTest'])->name('mock-tests.submit');
+    Route::get('/mock-tests/results/{result}', [StudentController::class, 'showMockTestResults'])->name('mock-tests.results');
+    Route::get('/progress', [StudentController::class, 'showStudentProgress'])->name('progress.index');
+    Route::get('/feedback', [StudentController::class, 'showFeedbackForm'])->name('feedback.create');
+    Route::post('/feedback', [StudentController::class, 'submitFeedback'])->name('feedback.submit');
+
+     Route::post('/book-session', [StudentController::class, 'bookSession'])->name('book.session');
+    Route::get('/sessions', [StudentController::class, 'showMySessions'])->name('sessions.index');
+
 });

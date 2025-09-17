@@ -30,8 +30,7 @@
                             <p class="text-lg font-semibold text-gray-800">
                                 Session with {{ $session->student->name }}
                             </p>
-                            <p class="text-sm text-gray-600">{{ $session->subject->name }} on {{ \Carbon\Carbon::parse($session->session_date)->format('F j, Y') }} from {{ \Carbon\Carbon::parse($session->start_time)->format('h:i A') }} to {{ \Carbon\Carbon::parse($session->end_time)->format('h:i A') }}</p>
-                        </div>
+                           </div>
                         <div>
                         @if($session->status === 'scheduled')
                             <a href="{{ route('tutor.session.manage', $session->id) }}" class="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">Manage</a>
