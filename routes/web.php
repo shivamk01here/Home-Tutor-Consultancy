@@ -1,16 +1,17 @@
 <?php
-use App\Http\Controllers\AuthController;
+
 use App\Http\Controllers\AdminController;
-use App\Http\Controllers\TutorController;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\StudentController;
+use App\Http\Controllers\TutorController;
+use App\Models\Session;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
-use App\Models\Session; // Import the Session model
 
 // Landing page
 Route::get('/', function () {
     return view('welcome');
-});
+})->name('welcome');
 
 // Authentication Routes
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -25,8 +26,26 @@ Route::post('/register/tutor', [AuthController::class, 'registerTutor']);
 // Protected Dashboards & Features
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
+    
+    // Tutor Management
+    Route::get('/tutors', [AdminController::class, 'showTutors'])->name('tutors.index');
+    Route::get('/tutors/create', [AdminController::class, 'showTutorCreateForm'])->name('tutors.create');
+    Route::post('/tutors/create', [AdminController::class, 'createTutor']);
+    Route::get('/tutors/{tutor}', [AdminController::class, 'showTutorDetails'])->name('tutors.show');
     Route::post('/tutors/{tutor}/verify', [AdminController::class, 'verifyTutor'])->name('tutor.verify');
     Route::delete('/tutors/{tutor}', [AdminController::class, 'deleteTutor'])->name('tutor.delete');
+
+    // Student Management
+    Route::get('/students', [AdminController::class, 'showStudents'])->name('students.index');
+    Route::get('/students/create', [AdminController::class, 'showStudentCreateForm'])->name('students.create');
+    Route::post('/students/create', [AdminController::class, 'createStudent']);
+    Route::get('/students/{student}', [AdminController::class, 'showStudentDetails'])->name('students.show');
+
+    // Subject Management
+    Route::get('/subjects', [AdminController::class, 'showSubjectManagement'])->name('subjects.index');
+    Route::post('/subjects/create', [AdminController::class, 'createSubject'])->name('subjects.create');
+
+    // Payment Management
     Route::get('/payments', [AdminController::class, 'showPayments'])->name('payments');
     Route::post('/payments/{session}/mark-as-paid', [AdminController::class, 'markPayment'])->name('payments.mark');
 });

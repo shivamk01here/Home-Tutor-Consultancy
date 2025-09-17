@@ -4,7 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\TutorProfile;
+use App\Models\Location;
+use App\Models\Subject;
+use App\Models\Session;
+use App\Models\Payment;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
+
 
 class AdminController extends Controller
 {
@@ -92,5 +98,192 @@ class AdminController extends Controller
         );
 
         return back()->with('success', 'Payment marked as paid.');
+    }
+
+
+    // ===================================
+    // SUBJECT MANAGEMENT
+    // ===================================
+    public function showSubjectManagement()
+    {
+        $subjects = Subject::all();
+        return view('admin.subjects.index', compact('subjects'));
+    }
+
+    public function createSubject(Request $request)
+    {
+        $request->validate(['name' => 'required|string|unique:subjects']);
+        Subject::create(['name' => $request->name]);
+        return back()->with('success', 'Subject created successfully.');
+    }
+
+    // ===================================
+    // TUTOR MANAGEMENT
+    // ===================================
+    public function showTutors(Request $request)
+    {
+        $query = User::whereHas('role', fn($q) => $q->where('name', 'tutor'))
+                     ->with(['tutorProfile.location', 'subjects']);
+
+        if ($request->filled('location_id')) {
+            $query->whereHas('tutorProfile', fn($q) => $q->where('location_id', $request->location_id));
+        }
+        if ($request->filled('subject_id')) {
+            $query->whereHas('subjects', fn($q) => $q->where('subject_id', $request->subject_id));
+        }
+        if ($request->filled('rating')) {
+            $query->whereHas('tutorProfile', fn($q) => $q->where('rating', '>=', $request->rating));
+        }
+        if ($request->filled('experience')) {
+            $query->whereHas('tutorProfile', fn($q) => $q->where('experience_years', '>=', $request->experience));
+        }
+
+        $tutors = $query->paginate(10);
+        $locations = Location::all();
+        $subjects = Subject::all();
+
+        return view('admin.tutors.index', compact('tutors', 'locations', 'subjects'));
+    }
+
+    public function showTutorCreateForm()
+    {
+        $subjects = Subject::all();
+        $locations = Location::all();
+        return view('admin.tutors.create', compact('subjects', 'locations'));
+    }
+    
+    public function createTutor(Request $request)
+    {
+        $validatedData = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users',
+            'password' => 'required|string|min:8',
+            'profile_photo' => 'nullable|image|max:2048',
+            'identity_proof' => 'nullable|file|mimes:pdf,doc,docx|max:5120',
+            'current_designation' => 'nullable|string',
+            'qualification' => 'required|string',
+            'experience_years' => 'required|integer|min:0',
+            'location_id' => 'required|exists:locations,id',
+            'subject_ids' => 'required|array',
+            'rating' => 'nullable|numeric|min:0|max:5',
+            'hourly_rates' => 'nullable|array',
+            'packages' => 'nullable|array',
+            'is_verified' => 'boolean',
+        ]);
+        
+        $tutorRole = Role::where('name', 'tutor')->first();
+        if (!$tutorRole) return back()->with('error', 'Tutor role not found.');
+
+        $profilePhotoPath = $request->hasFile('profile_photo') 
+            ? $request->file('profile_photo')->store('public/profile-photos') 
+            : null;
+
+        $identityProofPath = $request->hasFile('identity_proof')
+            ? $request->file('identity_proof')->store('private/tutor-documents')
+            : null;
+
+        $user = User::create([
+            'role_id' => $tutorRole->id,
+            'name' => $validatedData['name'],
+            'email' => $validatedData['email'],
+            'password' => Hash::make($validatedData['password']),
+            'profile_photo_path' => $profilePhotoPath,
+            'is_verified' => $request->has('is_verified') ? true : false,
+        ]);
+
+        $profile = TutorProfile::create([
+            'user_id' => $user->id,
+            'qualification' => $validatedData['qualification'],
+            'experience_years' => $validatedData['experience_years'],
+            'current_designation' => $validatedData['current_designation'],
+            'identity_proof_path' => $identityProofPath,
+            'rating' => $validatedData['rating'] ?? 0,
+            'location_id' => $validatedData['location_id'],
+            'packages' => $validatedData['packages'] ?? [],
+        ]);
+
+        $syncData = collect($validatedData['subject_ids'])->mapWithKeys(function ($subjectId) use ($validatedData) {
+            return [$subjectId => ['hourly_rate' => $validatedData['hourly_rates'][$subjectId] ?? 0]];
+        })->toArray();
+        $user->subjects()->sync($syncData);
+
+        return back()->with('success', 'Tutor added successfully.');
+    }
+
+    public function showTutorDetails(User $tutor)
+    {
+        $tutor->load('tutorProfile.location', 'subjects');
+        return view('admin.tutors.show', compact('tutor'));
+    }
+
+    // ===================================
+    // STUDENT MANAGEMENT
+    // ===================================
+    public function showStudents()
+    {
+        $students = User::whereHas('role', fn($q) => $q->where('name', 'student'))
+                        ->with(['studentProfile.location', 'subjectsOfInterest'])
+                        ->paginate(10);
+        return view('admin.students.index', compact('students'));
+    }
+
+    public function showStudentCreateForm()
+    {
+        $subjects = Subject::all();
+        $locations = Location::all();
+        return view('admin.students.create', compact('subjects', 'locations'));
+    }
+
+    public function createStudent(Request $request)
+    {
+        $validatedData = $request->validate([
+            'name' => 'required|string|max:255',
+            'surname' => 'nullable|string|max:255',
+            'parent_name' => 'required|string|max:255',
+            'parent_contact' => 'required|string|max:255',
+            'email' => 'required|email|unique:users',
+            'password' => 'required|string|min:8',
+            'profile_photo' => 'nullable|image|max:2048',
+            'location_id' => 'required|exists:locations,id',
+            'subjects_of_interest' => 'required|array|max:5',
+        ]);
+        
+        $studentRole = Role::where('name', 'student')->first();
+        if (!$studentRole) return back()->with('error', 'Student role not found.');
+
+        $profilePhotoPath = $request->hasFile('profile_photo')
+            ? $request->file('profile_photo')->store('public/profile-photos')
+            : null;
+
+        $user = User::create([
+            'role_id' => $studentRole->id,
+            'name' => $validatedData['name'] . ' ' . $validatedData['surname'],
+            'email' => $validatedData['email'],
+            'password' => Hash::make($validatedData['password']),
+            'profile_photo_path' => $profilePhotoPath,
+            'is_verified' => true,
+        ]);
+        
+        StudentProfile::create([
+            'user_id' => $user->id,
+            'parent_name' => $validatedData['parent_name'],
+            'parent_contact' => $validatedData['parent_contact'],
+            'profile_photo_path' => $profilePhotoPath,
+            'location_id' => $validatedData['location_id'],
+        ]);
+
+        $user->subjectsOfInterest()->sync($validatedData['subjects_of_interest']);
+
+        return back()->with('success', 'Student enrolled successfully.');
+    }
+    
+    public function showStudentDetails(User $student)
+    {
+        // Eager load the studentProfile and subjectsOfInterest relationships
+        $student->load(['studentProfile.location', 'subjectsOfInterest']);
+        
+        $payments = Payment::where('student_id', $student->id)->orderBy('created_at', 'desc')->get();
+        
+        return view('admin.students.show', compact('student', 'payments'));
     }
 }

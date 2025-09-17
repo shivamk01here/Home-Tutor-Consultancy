@@ -17,10 +17,24 @@ class TutorProfile extends Model
         'experience_years',
         'police_verification_status',
         'rating',
+        'location_id', // Make sure this is linked to the locations table
+        'current_designation', // New
+        'identity_proof_path', // New
+        'packages', // New
     ];
+
+    protected $casts = [
+        'packages' => 'array',
+    ];
+    
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function location(): BelongsTo
+    {
+        return $this->belongsTo(Location::class);
     }
 }

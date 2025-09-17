@@ -23,7 +23,7 @@
                     <a href="{{ route('register.choice') }}" class="text-gray-600 hover:text-gray-800 transition duration-200">Register</a>
                 @else
                     @if(Auth::user()->role->name === 'admin')
-                        <a href="{{ route('admin.dashboard') }}" class="nav-link text-gray-600 hover:text-gray-800">Dashboard</a>
+                        <a href="{{ route('admin.dashboard') }}" class="nav-link text-gray-600 hover:text-gray-800">Admin Panel </a>
                     @elseif(Auth::user()->role->name === 'tutor')
                         <a href="{{ route('tutor.dashboard') }}" class="nav-link text-gray-600 hover:text-gray-800">Dashboard</a>
                         <a href="{{ route('tutor.profile.show') }}" class="nav-link text-gray-600 hover:text-gray-800">My Profile</a>

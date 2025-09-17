@@ -67,6 +67,12 @@ class User extends Authenticatable
                     ->withPivot('hourly_rate');
     }
 
+
+    public function subjectsOfInterest(): BelongsToMany
+    {
+        return $this->belongsToMany(Subject::class, 'student_subject', 'student_id', 'subject_id');
+    }
+
     /**
      * Get the sessions where the user is a tutor.
      */

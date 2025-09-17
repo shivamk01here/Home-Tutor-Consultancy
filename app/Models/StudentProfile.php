@@ -12,12 +12,19 @@ class StudentProfile extends Model
 
     protected $fillable = [
         'user_id',
-        'grade_level',
         'parent_name',
+        'parent_contact',
+        'profile_photo_path',
+        'location_id',
     ];
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function location(): BelongsTo
+    {
+        return $this->belongsTo(Location::class);
     }
 }

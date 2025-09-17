@@ -51,17 +51,6 @@ CREATE TABLE `tutor_profiles` (
   FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- student_profiles table
-CREATE TABLE `student_profiles` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `user_id` BIGINT UNSIGNED NOT NULL UNIQUE,
-  `grade_level` VARCHAR(50) DEFAULT NULL,
-  `parent_name` VARCHAR(255) DEFAULT NULL,
-  `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 -- subjects table
@@ -219,3 +208,48 @@ INSERT INTO `subject_user` (`user_id`, `subject_id`, `hourly_rate`) VALUES
 (14, 1, 850), (14, 11, 900), (14, 13, 900),
 (15, 4, 700), (15, 6, 750), (15, 14, 800),
 (16, 5, 600), (16, 15, 650);
+
+
+-- locations table
+CREATE TABLE `locations` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(255) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Insert 10 locations
+INSERT INTO `locations` (`name`) VALUES
+('Delhi'), ('Lucknow'), ('Noida'), ('Bangalore'), ('Agra'), ('Gurgaon'), ('Kanpur'), ('Roorkee'), ('Dehradun'), ('Pune');
+
+-- student_profiles table
+CREATE TABLE `student_profiles` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `user_id` BIGINT UNSIGNED NOT NULL,
+  `parent_name` VARCHAR(255) NOT NULL,
+  `parent_contact` VARCHAR(255) NOT NULL,
+  `profile_photo_path` VARCHAR(255) NULL,
+  `location_id` BIGINT UNSIGNED NULL,
+  `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`location_id`) REFERENCES `locations`(`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+
+-- Add new fields to tutor_profiles table
+ALTER TABLE `tutor_profiles`
+ADD COLUMN `current_designation` VARCHAR(255) NULL AFTER `experience_years`,
+ADD COLUMN `identity_proof_path` VARCHAR(255) NULL AFTER `current_designation`,
+ADD COLUMN `packages` JSON NULL AFTER `identity_proof_path`;
+
+
+
+-- student_subject pivot table
+CREATE TABLE `student_subject` (
+  `student_id` BIGINT UNSIGNED NOT NULL,
+  `subject_id` BIGINT UNSIGNED NOT NULL,
+  FOREIGN KEY (`student_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`subject_id`) REFERENCES `subjects`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
