@@ -83,6 +83,8 @@ CREATE TABLE `tutor_subjects` (
   FOREIGN KEY (`subject_id`) REFERENCES `subjects`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+
+
 -- sessions table
 CREATE TABLE `sessions` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
