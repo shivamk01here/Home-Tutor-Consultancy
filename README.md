@@ -1,4 +1,3 @@
-```markdown
 # 🏠 Home Tutor Consultancy Platform
 
 A Laravel-based platform that connects students and parents with verified, qualified home tutors. The system ensures **safety, affordability, transparency, and personalized learning** while enabling hybrid (offline + online) support.
