@@ -100,7 +100,7 @@ class TutorController extends Controller
     }
     public function showHybridLearning()
     {
-        $resources = LearningResource::where('tutor_id', Auth::id())->get();
+        $resources = \App\Models\LearningResource::where('tutor_id', Auth::id())->get();
         return view('tutor.hybrid-learning', compact('resources'));
     }
 

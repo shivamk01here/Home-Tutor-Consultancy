@@ -1,4 +1,3 @@
-// app/Models/LearningResource.php
 <?php
 
 namespace App\Models;

@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Subject;
 use App\Models\Session;
+use App\Models\Review;
+use App\Models\Location;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -34,24 +36,55 @@ class StudentController extends Controller
     /**
      * Show the tutor discovery page.
      */
+    /**
+     * Show the tutor discovery page with search and filters.
+     */
     public function showTutorDiscovery(Request $request)
     {
-        $query = User::whereHas('role', function ($q) {
-            $q->where('name', 'tutor');
-        })->where('is_verified', true)->with('tutorProfile', 'subjects');
+        $query = User::whereHas('role', fn($q) => $q->where('name', 'tutor'))
+                     ->where('is_verified', true)
+                     ->with(['tutorProfile.location', 'subjects']);
 
-        // Apply filters
+        // Filter by Tutor Name
+        if ($request->filled('name')) {
+            $query->where('name', 'like', '%' . $request->input('name') . '%');
+        }
+
+        // Filter by Subject
         if ($request->filled('subject_id')) {
-            $query->whereHas('subjects', function ($q) use ($request) {
-                $q->where('subject_id', $request->subject_id);
-            });
+            $query->whereHas('subjects', fn($q) => $q->where('subject_id', $request->input('subject_id')));
+        }
+
+        // Filter by Location
+        if ($request->filled('location_id')) {
+            $query->whereHas('tutorProfile', fn($q) => $q->where('location_id', $request->input('location_id')));
         }
         
-        $tutors = $query->get();
-        $subjects = Subject::all();
+        // Filter by Rating
+        if ($request->filled('min_rating')) {
+            $query->whereHas('tutorProfile', fn($q) => $q->where('rating', '>=', $request->input('min_rating')));
+        }
 
-        return view('student.tutor-discovery', compact('tutors', 'subjects'));
-    }
+        // Filter by Experience
+        if ($request->filled('min_experience')) {
+            $query->whereHas('tutorProfile', fn($q) => $q->where('experience_years', '>=', $request->input('min_experience')));
+        }
+
+        // Filter by Hourly Rate (requires a join)
+        if ($request->filled('min_rate')) {
+            $query->whereHas('subjects', fn($q) => $q->where('subject_user.hourly_rate', '>=', $request->input('min_rate')));
+        }
+        if ($request->filled('max_rate')) {
+            $query->whereHas('subjects', fn($q) => $q->where('subject_user.hourly_rate', '<=', $request->input('max_rate')));
+        }
+
+        $tutors = $query->paginate(10);
+        
+        $subjects = Subject::all();
+        $locations = Location::all();
+
+        return view('student.tutor-discovery', compact('tutors', 'subjects', 'locations'));
+    }   
 
     /**
      * Show a single tutor's profile.
